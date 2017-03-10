@@ -1,0 +1,5 @@
+*.o
+*~
+game-00
+bin/
+build/
