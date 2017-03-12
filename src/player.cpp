@@ -13,8 +13,7 @@ Player::~Player()
 void
 Player::move()
 {
-    global_test();
-    init();
+
 }
 
 void

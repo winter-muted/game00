@@ -7,16 +7,10 @@
 
 #include <iostream>
 
-#include "level.hpp"
 #include "entity.hpp"
-#include "player.hpp"
 #include "global.hpp"
-
-
-
-
-
-
-
+#include "level.hpp"
+#include "player.hpp"
+#include "texture.hpp"
 
 #endif
