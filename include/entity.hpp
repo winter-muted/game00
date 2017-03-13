@@ -1,10 +1,11 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 
-#include <SDL2/SDL.h>
+
 #include <vector>
 
-class Entity;
+#include "io.hpp"
+
 
 class Entity
 {
@@ -15,7 +16,7 @@ public:
 
     virtual void move() = 0;
 
-    virtual void render() = 0;
+    virtual void render(IOContext & io);
 
     // TODO fix this return type;
     void getTexture();
@@ -32,7 +33,7 @@ private:
     int mVely;
 
     // SDL rectangles used for collision detection
-    std::vector<SDL_Rect> mCollisionBoxes;
+    // std::vector<SDL_Rect> mCollisionBoxes;
 
     // SDL Texture to render for this entity
 

@@ -6,7 +6,12 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 
-#include "global.hpp"
+#include "io.hpp"
+
+class IOContext;
+
+// #include "io.hpp"
+
 
 class LTexture {
 public:
@@ -14,10 +19,9 @@ public:
 
   ~LTexture();
 
-  void loadFromFile(std::string path);
+  void loadFromFile(std::string path, IOContext & io);
 
-  void render(int x, int y, SDL_Rect *clip = NULL, double angle = 0.0,
-              SDL_Point *center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE);
+  void render(IOContext & io, int x, int y, SDL_Rect *clip = NULL, double angle=0.0, SDL_Point *center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE);
 
   void free();
 

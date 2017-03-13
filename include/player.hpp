@@ -1,21 +1,29 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-#include "global.hpp"
+// #include <string>
 #include "entity.hpp"
+// #include "io.hpp"
+#include "texture.hpp"
+//
+// class IOContext;
+//
+class LTexture;
 
-class Player;
-
-class Player : public Entity
+class Player : private Entity
 {
 public:
-    Player();
+    Player(LTexture* characterTexture);
 
     ~Player();
 
     virtual void move();
 
-    virtual void render();
+    virtual void render(IOContext & io);
+
+
+private:
+    LTexture* mCharacterTexture = NULL;
 
 };
 

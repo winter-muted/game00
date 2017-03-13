@@ -11,13 +11,13 @@ const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
 // Global window handle
-static SDL_Window *gWindow = NULL;
+// static SDL_Window *gWindow = NULL;
 
 // The SDL rendering handle
-static SDL_Renderer *gRenderer = NULL;
+// static SDL_Renderer *gRenderer = NULL;
 
-bool init();
+bool init(SDL_Window *gWindow,SDL_Renderer *gRenderer);
 bool loadResources();
-void close();
+void close(SDL_Window *gWindow,SDL_Renderer *gRenderer);
 
 #endif

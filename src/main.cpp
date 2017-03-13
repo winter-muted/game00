@@ -1,42 +1,47 @@
-
+const int SCREEN_WIDTH = 640;
+const int SCREEN_HEIGHT = 480;
 
 #include "main.hpp"
 
 int main() {
 
-  // Load the SDL context
-  bool success = init();
+    IOContext io;
+    EngineBase engine;
 
-  if (!loadResources) {
-    std::cout << "Could not load media!\n";
-    SDL_Rect camera = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
-  }
-  LTexture background;
-  background.loadFromFile("resources/background.png");
+    io.init(SCREEN_WIDTH,SCREEN_HEIGHT);
 
-  // start the game loop
-  bool quit = false;
-  SDL_Event e;
+    LTexture backgroundTexture;
+    LTexture characterTexture;
 
-  while (!quit) {
-    while (SDL_PollEvent(&e) != 0) {
-      // read events
-      if (e.type == SDL_Quit)
-        quit = true;
+    backgroundTexture.loadFromFile("resources/background.png",io);
+    characterTexture.loadFromFile("resources/character.bmp",io);
 
-      // process events
-      //   Character.handleEvent(e);
-      //   Character.move(Level);
-      //   Character.positionCamera(camera)
-      //
-      // update rendering
-      SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
-      SDL_RenderClear(gRenderer);
+    Player character(&characterTexture);
 
-      SDL_RenderPresent(gRenderer);
+    // inform the engine of the existence of each entity
+    engine.registerEnvironment(&backgroundTexture);
 
-      // end the game
+    bool quit = false;
+    while(!quit)
+    {
+        // quit if neccesary.
+        // otherwise, tell the game engine what events
+        // have occured, and let it take action
+        quit = engine.process(io);
+        // quit = engine.checkExit();
+
+        engine.updateRenderPipeline();
+        // access input from io context
+        // character.processInput(io);
+        // update render state
+        // background.render(io,0,0);
+        // draw updated state
+        io.draw();
     }
-    close();
-  }
+
+    // close all the textures that were created
+    backgroundTexture.free();
+    characterTexture.free();
+    io.close();
+
 }
