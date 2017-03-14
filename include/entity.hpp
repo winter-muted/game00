@@ -15,6 +15,8 @@ public:
 
   virtual void render(IOContext &io) = 0;
 
+  virtual void setFlyingState(int state) = 0;
+
   // TODO fix this return type;
   // void getTexture();
 

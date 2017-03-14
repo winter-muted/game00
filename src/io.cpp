@@ -30,7 +30,7 @@ IOContext::init(int SCREEN_WIDTH, int SCREEN_HEIGHT) {
       }
       // enable various rendering features
       else {
-        // draw white
+        // draw black
         SDL_SetRenderDrawColor(mRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
         // this code taken from lazyfoo. why are we bitwise anding?
         int imgFlags = IMG_INIT_PNG;
@@ -47,8 +47,9 @@ IOContext::init(int SCREEN_WIDTH, int SCREEN_HEIGHT) {
 
 void
 IOContext::draw()
-{
+{   
     SDL_RenderPresent(mRenderer);
+    SDL_RenderClear(mRenderer);
 }
 
 SDL_Renderer*
@@ -81,12 +82,10 @@ IOContext::getInput()
             case SDL_KEYDOWN:
                 return e.key.keysym.sym;
             case SDL_QUIT:
-                exit(3);
+                return SDL_QUIT;
         }
     }
-    return -1;
-
-    // return e.key.keysym.sym;
+    return 0;
 
 
 

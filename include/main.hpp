@@ -9,7 +9,7 @@
 
 #include "io.hpp"
 // #include "entity.hpp"
-// #include "global.hpp"
+#include "global.hpp"
 // #include "level.hpp"
 #include "player.hpp"
 #include "texture.hpp"

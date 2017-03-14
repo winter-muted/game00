@@ -29,7 +29,7 @@ void LTexture::loadFromFile(std::string path, IOContext & io) {
   	else
   	{
   		//Color key image
-  		SDL_SetColorKey( loadedSurface, SDL_TRUE, SDL_MapRGB( loadedSurface->format, 0, 0xFF, 0xFF ) );
+  		SDL_SetColorKey( loadedSurface, SDL_TRUE, SDL_MapRGB( loadedSurface->format, 0xEE, 0xEE, 0xEE ) );
 
   		//Create texture from surface pixels
           newTexture = SDL_CreateTextureFromSurface( gRenderer, loadedSurface );
@@ -52,8 +52,37 @@ void LTexture::loadFromFile(std::string path, IOContext & io) {
   	mTexture = newTexture;
  //  	return mTexture != NULL;
 }
+void
+LTexture::render(IOContext & io,int x, int y,Rect* sprite = NULL)
+{
+    if (mTexture == NULL) {
+        std::cout << "Tried to render NULL texture!\n";
+        exit(3);
+    }
 
-void LTexture::render(IOContext & io,int x, int y, SDL_Rect *clip, double angle, SDL_Point* center, SDL_RendererFlip flip) {
+    SDL_Rect* clip;
+
+    if (sprite != NULL)
+    {
+        // std::cout << sprite->x << "\n";
+        SDL_Rect newclip;
+        newclip.x = sprite->x;
+        newclip.y = sprite->y;
+        newclip.h = sprite->h;
+        newclip.w = sprite->w;
+        clip = &newclip;
+    }
+    else
+    {
+        clip = NULL;
+    }
+    // if (clip != NULL)
+    //     std::cout << "got good clip.\n";
+
+    renderTexture(io,x,y,clip);
+}
+
+void LTexture::renderTexture(IOContext & io,int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE) {
 
   SDL_Renderer* gRenderer = io.getRenderer();
 
@@ -62,9 +91,11 @@ void LTexture::render(IOContext & io,int x, int y, SDL_Rect *clip, double angle,
   if (clip != NULL) {
     renderQuad.w = clip->w;
     renderQuad.h = clip->h;
+
+    // std::cout << "going to render" << renderQuad.w << "\n";
   }
 
-  SDL_RenderCopyEx(gRenderer, mTexture, clip, &renderQuad, angle, center, flip);
+  SDL_RenderCopyEx( gRenderer, mTexture, clip, &renderQuad, angle, center, flip );
 }
 
 void LTexture::free()

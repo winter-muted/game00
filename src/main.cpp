@@ -14,30 +14,31 @@ int main() {
     LTexture characterTexture;
 
     backgroundTexture.loadFromFile("resources/background.png",io);
-    // characterTexture.loadFromFile("resources/character.bmp",io);
+    characterTexture.loadFromFile("resources/character.bmp",io);
 
-    // Player character(&characterTexture);
+    Player character(&characterTexture);
+    character.setAnimationClip(2);
+
+    character.getAnimationClips();
 
     // inform the engine of the existence of each entity
     engine.registerEnvironment(&backgroundTexture);
+    engine.registerEntity(&character);
 
     bool quit = false;
     while(!quit)
     {
-        // quit if neccesary.
-        // otherwise, tell the game engine what events
-        // have occured, and let it take action
+        // process io
         quit = engine.process(io);
-        // quit = engine.checkExit();
 
+        // update textures
         engine.updateRenderPipeline(io);
-        // access input from io context
-        // character.processInput(io);
-        // update render state
-        // background.render(io,0,0);
-        // draw updated state
+
         io.draw();
+
     }
+    std::cout << "exiting sdl loop" << std::endl;
+    // std::cin.ignore();
 
     // close all the textures that were created
     backgroundTexture.free();

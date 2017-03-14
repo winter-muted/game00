@@ -31,26 +31,28 @@ EngineBase::process(IOContext & io)
 {
     int key = io.getInput();
 
-    if (key == SDL_QUIT)
-        return 1;
-
     // for now, just use a simple keymap
     // these keys map to the character
+
     switch (key) {
-        // case SDLK_w:
-        //     mEntity[0].move(
-        //     break;
+        case SDL_QUIT:
+            return 1;
+            break;
+        case SDLK_w:
+            std::cout << "w\n";
+            break;
         case SDLK_a:
-            mEntity[0]->move();
+            std::cout << "a\n";
             break;
         case SDLK_s:
-
+            std::cout << "s\n";
             break;
         case SDLK_d:
-
+            std::cout << "d\n";
             break;
         case SDLK_SPACE:
-
+            mEntity[0]->setFlyingState(1);
+            std::cout << "space\n";
             break;
     }
 
@@ -60,8 +62,9 @@ EngineBase::process(IOContext & io)
 void
 EngineBase::updateRenderPipeline(IOContext & io)
 {
-    mBackground->render(io,0,0);
-
-    mEntity[0]->render(io);
+    if (!mBackground == NULL)
+        mBackground->render(io,0,0,NULL);
+    if (mEntity.size() >=1)
+        mEntity[0]->render(io);
 
 }
