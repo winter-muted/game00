@@ -14,9 +14,9 @@ int main() {
     LTexture characterTexture;
 
     backgroundTexture.loadFromFile("resources/background.png",io);
-    characterTexture.loadFromFile("resources/character.bmp",io);
+    // characterTexture.loadFromFile("resources/character.bmp",io);
 
-    Player character(&characterTexture);
+    // Player character(&characterTexture);
 
     // inform the engine of the existence of each entity
     engine.registerEnvironment(&backgroundTexture);
@@ -30,7 +30,7 @@ int main() {
         quit = engine.process(io);
         // quit = engine.checkExit();
 
-        engine.updateRenderPipeline();
+        engine.updateRenderPipeline(io);
         // access input from io context
         // character.processInput(io);
         // update render state

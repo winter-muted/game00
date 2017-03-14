@@ -10,22 +10,18 @@
 //
 class LTexture;
 
-class Player : private Entity
-{
+class Player : public Entity {
 public:
-    Player(LTexture* characterTexture);
+  Player(LTexture *characterTexture);
 
-    ~Player();
+  ~Player();
 
-    virtual void move();
+  virtual void move();
 
-    virtual void render(IOContext & io);
-
+  virtual void render(IOContext &io);
 
 private:
-    LTexture* mCharacterTexture = NULL;
-
+  LTexture *mCharacterTexture = NULL;
 };
-
 
 #endif

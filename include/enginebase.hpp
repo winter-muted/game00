@@ -11,7 +11,7 @@
 #include "io.hpp"
 #include "texture.hpp"
 
-class Entity; // placeholder so it will compile
+// class Entity; // placeholder so it will compile
 class IOContext;
 class LTexture;
 
