@@ -100,7 +100,7 @@ class Entity
 public:
     virtual void init(Texture* texture,int xpos, int ypos) = 0;
 
-    void render();
+    virtual void render();
     void free();
 
     virtual void die() = 0;
@@ -116,6 +116,11 @@ protected:
     std::vector<SDL_Rect*> mCollisionRect;
     bool mIsDead = 0;
 
+    int mXPos;
+    int mYPos;
+    int mWidth;
+    int mHeight;
+
 };
 
 /* A class to represent the player character */
@@ -124,14 +129,18 @@ class Player : public Entity
 public:
 
     void init(Texture* texture,int xpos, int ypos);
+
+    virtual void render();
+
     void interact(Level* level,std::vector<Entity*>& entityList, int action);
 
     void die();
     bool isDead();
 
+
 private:
-    int mWidth = 10;
-    int mHeight = 10;
+    bool isFlying = 0;
+
 
 };
 
@@ -141,6 +150,8 @@ class Coin : public Entity
 public:
 
     void init(Texture* texture,int xpos, int ypos);
+
+    virtual void render();
 
     void die();
     bool isDead();
@@ -156,9 +167,13 @@ public:
 
     bool loadFromFile(std::string path);
     void free();
-    void render();
+    void render(int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE );
 
 private:
+
+    SDL_Texture* mTexture = NULL;
+    int mWidth = 0;
+    int mHeight = 0;
 
 };
 

@@ -181,7 +181,7 @@ void
 Level::render()
 {
     if (mTexture != NULL)
-        mTexture->render();
+        mTexture->render(0,0);
     else
         debug("Tried to render NULL level texture");
 
@@ -219,8 +219,7 @@ Level::getCollisionBox()
 void
 Entity::render()
 {
-    if (mTexture != NULL)
-        debug("TODO");
+    mTexture->render(mXPos,mYPos);
 }
 
 void
@@ -263,7 +262,7 @@ Entity::isCollision(std::vector<SDL_Rect*> & A)
             // if any side does not overlap, there is no collision;
             if ((bottomA <= topB) || (topA >= bottomB) || (rightA <= leftB) || (leftA >= rightB) == false)
             {
-                return true;
+                return false;
             }
         }
 
@@ -292,28 +291,42 @@ Player::init(Texture* texture, int xpos, int ypos)
     // set the initial position collision box(es)
     // for now, just have one collision box
     mCollisionRect.push_back(new SDL_Rect {xpos,ypos,mWidth,mHeight});
+
+    mXPos = xpos;
+    mYPos = ypos;
+    mWidth = 4;
+    mHeight = 10;
+}
+
+void
+Player::render()
+{
+    // do the clip specific code
+    SDL_Rect* clip = NULL;
+    mTexture->render(mXPos,mYPos,clip);
+
 }
 void
 Player::interact(Level* level,std::vector<Entity*> & entityList, int action)
 {
-    int moveX = 0;
-
-    // parse the action to determine what to do
-    switch (action)
-    {
-        case SDLK_a:
-
-    // unroll action if a collision with the level occured
-    // check collision with the level
-    bool levelCollision = isCollision(level->getCollisionBox);
-    if (levelCollision)
-        // undo movement
-
-    // loop through the entity list.
-    // for now, we just mark other entities as dead on collsion
-    for (size_t i = 0; i < entityList.size(); i++)
-        if (isCollision(entityList[i]->getCollisionBox())
-            entityList[i]->isDead();
+    // int moveX = 0;
+    //
+    // // parse the action to determine what to do
+    // switch (action)
+    // {
+    //     case SDLK_a:
+    //
+    // // unroll action if a collision with the level occured
+    // // check collision with the level
+    // bool levelCollision = isCollision(level->getCollisionBox());
+    // if (levelCollision)
+    //     // undo movement
+    //
+    // // loop through the entity list.
+    // // for now, we just mark other entities as dead on collsion
+    // for (size_t i = 0; i < entityList.size(); i++)
+    //     if (isCollision(entityList[i]->getCollisionBox())
+    //         entityList[i]->isDead();
 
 
 
@@ -334,6 +347,26 @@ Player::isDead()
 /////////////////////////////////////////////////////////////////
 // COIN
 void
+Coin::init(Texture* texture,int xpos,int ypos)
+{
+    if (texture != NULL)
+        mTexture = texture;
+    else
+        debug("Coin tried to initialize on NULL texture");
+
+    mXPos = xpos;
+    mYPos = ypos;
+    mWidth = 4;
+    mHeight = 4;
+}
+
+void
+Coin::render()
+{
+    mTexture->render(mXPos,mYPos);
+}
+
+void
 Coin::die()
 {
     mIsDead = 1;
@@ -350,19 +383,64 @@ Coin::isDead()
 bool
 Texture::loadFromFile(std::string path)
 {
+    free();
 
+    SDL_Texture* newTexture = NULL;
+
+    SDL_Surface* loadedSurface = IMG_Load(path.c_str());
+    if (loadedSurface == NULL)
+    {
+        debug("Could not load texture image!");
+    }
+    else
+    {
+        // color key image
+        SDL_SetColorKey(loadedSurface,SDL_TRUE,SDL_MapRGB(loadedSurface->format,0,0xFF,0xFF));
+
+        newTexture = SDL_CreateTextureFromSurface(gRenderer,loadedSurface);
+
+        if (newTexture == NULL)
+        {
+            debug("Could not create texture from sdl surface!");
+        }
+        else
+        {
+            mWidth = loadedSurface->w;
+            mHeight = loadedSurface->h;
+        }
+        SDL_FreeSurface(loadedSurface);
+    }
+
+    mTexture = newTexture;
+    return mTexture != NULL;
 }
 
 void
 Texture::free()
 {
-
+    if (mTexture != NULL)
+    {
+        SDL_DestroyTexture(mTexture);
+        mTexture = NULL;
+        mWidth = 0;
+        mHeight = 0;
+    }
 }
 
 void
-Texture::render()
+Texture::render(int x, int y, SDL_Rect* clip,double angle,SDL_Point* center, SDL_RendererFlip flip)
 {
+    // set the rendering space
+    SDL_Rect renderQuad = {x,y,mWidth,mHeight};
 
+    // set the dimensions of the image to render
+    if (clip != NULL)
+    {
+        renderQuad.w = clip->w;
+        renderQuad.h = clip->h;
+    }
+    // render to the screen
+    SDL_RenderCopyEx(gRenderer,mTexture,clip,&renderQuad,angle,center,flip);
 }
 
 int main() {
@@ -379,17 +457,17 @@ int main() {
 
         if (!playerTexture.loadFromFile("resources/player.png"))
         {
-            std::cout << "Could not load player texture at given path!\n";
+            debug("could not load player image");
             exit(3);
         }
         if (!levelTexture.loadFromFile("resources/level.png"))
         {
-            std::cout << "Could not load level textures at given path!\n";
+            debug("could not load level image");
             exit(3);
         }
         if (!coinTexture.loadFromFile("resources/coin.png"))
         {
-            std::cout << "Could not load coin texture at given path!\n";
+            debug("could not load coin image");
             exit(3);
         }
         Engine engine;
@@ -397,9 +475,9 @@ int main() {
         Player player;
         Coin coin;
 
-        player.init(&playerTexture);
+        player.init(&playerTexture,0,0);
         level.init(&levelTexture);
-        coin.init(&coinTexture);
+        coin.init(&coinTexture,20,20);
         engine.registerPlayer(&player);
         engine.registerLevel(&level);
         engine.registerEntity(&coin);
