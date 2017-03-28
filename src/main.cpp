@@ -7,7 +7,7 @@ init()
 {
     bool success = true;
 
-    if (!SDL_Init(SDL_INIT_VIDEO))
+    if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
         debug("Could not initialize at SDL_INIT_VIDEO");
         success = false;
@@ -103,15 +103,13 @@ Engine::processInput()
 
     while (SDL_PollEvent(&e) != 0)
     {
-        switch (e.type) {
-            case SDL_KEYDOWN:
-                mRecentInput = e.key.keysym.sym;
-            case SDL_QUIT:
-                return false;
-        }
+        if (e.type == SDL_QUIT)
+            return false;
+
+        mPlayer->processInput(e);
+        return true;
     }
     return true;
-
 }
 
 /* The input is used by player to move and interact.
@@ -169,7 +167,8 @@ Level::init(Texture* texture)
 
     // Create an SDL_Rect that is the collision box in the level
     // SDL_Rect* collisionBox = new SDL_Rect {20,20,20,20};
-    mCollisionRect.push_back(new SDL_Rect {20,20,20,20});
+    mCollisionRect.push_back(new SDL_Rect {0,400,800,20});
+    // mCollisionRect.push_back(new SDL_Rect {250,250,30,30});
 
 
 
@@ -236,39 +235,71 @@ Entity::free()
 }
 
 bool
-Entity::isCollision(std::vector<SDL_Rect*> & A)
+Entity::isCollision(std::vector<SDL_Rect*> A)
 {
+    // int leftA,leftB;
+    // int rightA,rightB;
+    // int topA,topB;
+    // int bottomA,bottomB;
+    //
+    // for (size_t i = 0; i < A.size(); i++)
+    // {
+    //     leftA = A[i]->x;
+    //     rightA = A[i]->x + A[i]->w;
+    //     topA = A[i]->y;
+    //     bottomA = A[i]->y + A[i]->h;
+    //
+    //     // iterate through B collision boxes
+    //     for (size_t j = 0; j < mCollisionRect.size(); j++)
+    //     {
+    //
+    //         leftB = mCollisionRect[j]->x;
+    //         rightB = mCollisionRect[j]->x + mCollisionRect[j]->w;
+    //         topB = mCollisionRect[j]->y;
+    //         bottomB = mCollisionRect[j]->y + mCollisionRect[j]->h;
+    //
+    //         // if any side does not overlap, there is no collision;
+    //         if ((bottomA <= topB) || (topA >= bottomB) || (rightA <= leftB) || (leftA >= rightB) == false)
+    //         {
+    //             return true;
+    //         }
+    //     }
+    //
+    // }
+    // else return no collision
+    // return false;
+
     int leftA,leftB;
     int rightA,rightB;
     int topA,topB;
     int bottomA,bottomB;
 
-    for (size_t i = 0; i < A.size(); i++)
+    for (size_t i = 0; i < mCollisionRect.size(); i++)
     {
-        leftA = A[i]->x;
-        rightA = A[i]->x + A[i]->w;
-        topA = A[i]->y;
-        bottomA = A[i]->y + A[i]->h;
+        leftA = mCollisionRect[i]->x;
+        rightA = mCollisionRect[i]->x + mCollisionRect[i]->w;
+        topA = mCollisionRect[i]->y;
+        bottomA = mCollisionRect[i]->y + mCollisionRect[i]->h;
 
         // iterate through B collision boxes
-        for (size_t j = 0; j < mCollisionRect.size(); j++)
+        for (size_t j = 0; j < A.size(); j++)
         {
 
-            leftB = mCollisionRect[j]->x;
-            rightB = mCollisionRect[j]->x + mCollisionRect[j]->w;
-            topB = mCollisionRect[j]->y;
-            bottomB = mCollisionRect[j]->y + mCollisionRect[j]->h;
+            leftB = A[j]->x;
+            rightB = A[j]->x + A[j]->w;
+            topB = A[j]->y;
+            bottomB = A[j]->y + A[j]->h;
 
             // if any side does not overlap, there is no collision;
-            if ((bottomA <= topB) || (topA >= bottomB) || (rightA <= leftB) || (leftA >= rightB) == false)
+            if( ( ( bottomA <= topB ) || ( topA >= bottomB ) || ( rightA <= leftB ) || ( leftA >= rightB ) ) == false )
             {
-                return false;
+                return true;
             }
         }
 
     }
-    // else return collision
-    return true;
+    // else return no collision
+    return false;
 }
 
 std::vector<SDL_Rect*>
@@ -288,14 +319,18 @@ Player::init(Texture* texture, int xpos, int ypos)
     else
         debug("Entity tried to initialize on NULL texture");
 
+    mXPos = xpos;
+    mYPos = ypos;
+    mVelX = 0;
+    mVelY = 0;
+    mWidth = 75;
+    mHeight = 64;
+
     // set the initial position collision box(es)
     // for now, just have one collision box
     mCollisionRect.push_back(new SDL_Rect {xpos,ypos,mWidth,mHeight});
 
-    mXPos = xpos;
-    mYPos = ypos;
-    mWidth = 4;
-    mHeight = 10;
+
 }
 
 void
@@ -306,31 +341,149 @@ Player::render()
     mTexture->render(mXPos,mYPos,clip);
 
 }
+
+void
+Player::processInput(SDL_Event & e)
+{
+    //If a key was pressed
+    if( e.type == SDL_KEYDOWN && e.key.repeat == 0 )
+    {
+        //Adjust the velocity
+        switch( e.key.keysym.sym )
+        {
+
+            case SDLK_w:
+            {
+                mIsFlying = 1;
+                mVelY -= 25;
+                break;
+            }
+            // case SDLK_s:
+            //     mVelY += 1;
+            //     break;
+            case SDLK_a:
+                mVelX -= 1;
+                break;
+            case SDLK_d:
+                mVelX += 1;
+                break;
+        }
+    }
+    //If a key was released
+    else if( e.type == SDL_KEYUP && e.key.repeat == 0 )
+    {
+        //Adjust the velocity
+        switch( e.key.keysym.sym )
+        {
+            // case SDLK_w:
+            // {
+            //     mVelY += 1;
+            //     break;
+            // }
+            // case SDLK_s:
+            //     mVelY -= 1;
+            //     break;
+            case SDLK_a:
+                mVelX += 1;
+                break;
+            case SDLK_d:
+                mVelX -= 1;
+                break;
+        }
+    }
+    // std::cout << e.key.keysym.sym << std::endl;
+}
 void
 Player::interact(Level* level,std::vector<Entity*> & entityList, int action)
 {
-    // int moveX = 0;
-    //
-    // // parse the action to determine what to do
-    // switch (action)
-    // {
-    //     case SDLK_a:
-    //
-    // // unroll action if a collision with the level occured
-    // // check collision with the level
-    // bool levelCollision = isCollision(level->getCollisionBox());
-    // if (levelCollision)
-    //     // undo movement
-    //
-    // // loop through the entity list.
-    // // for now, we just mark other entities as dead on collsion
-    // for (size_t i = 0; i < entityList.size(); i++)
-    //     if (isCollision(entityList[i]->getCollisionBox())
-    //         entityList[i]->isDead();
+
+    bool levelCollision;
+
+    moveX();
+
+    levelCollision = isCollision(level->getCollisionBox());
+
+    if (mXPos < 0 || mXPos > SCREEN_WIDTH)
+    {
+        unmoveX();
+    }
+
+    moveY();
+
+    levelCollision = isCollision(level->getCollisionBox());
+
+    if (mYPos < 0 || mYPos > SCREEN_HEIGHT)
+    {
+        unmoveY();
+    }
+
+    if (levelCollision)
+    {
+        mIsFlying = 0;
+        unmoveY();
+    }
 
 
+    for (size_t i = 0; i < entityList.size(); i++)
+    {
+        if (isCollision(entityList[i]->getCollisionBox()))
+        {
+            entityList[i]->die();
+            break;
+        }
+    }
 
 }
+
+
+void
+Player::moveX()
+{
+
+    mXPos += mVelX;
+
+    for (size_t i = 0; i < mCollisionRect.size(); i++)
+    {
+        mCollisionRect[i]->x += mVelX;
+    }
+}
+
+void
+Player::unmoveX()
+{
+    mXPos -= mVelX;
+
+    for (size_t i = 0; i < mCollisionRect.size(); i++)
+    {
+        mCollisionRect[i]->x -= mVelX;
+    }
+}
+
+void
+Player::moveY()
+{
+    if (mIsFlying)
+        mVelY += 0.5;
+
+    mYPos += mVelY;
+
+    for (size_t i = 0; i < mCollisionRect.size(); i++)
+    {
+        mCollisionRect[i]->y += mVelY;
+    }
+}
+
+void
+Player::unmoveY()
+{
+    mYPos -= mVelY;
+
+    for (size_t i = 0; i < mCollisionRect.size(); i++)
+    {
+        mCollisionRect[i]->y -= mVelY;
+    }
+}
+
 
 void
 Player::die()
@@ -356,8 +509,10 @@ Coin::init(Texture* texture,int xpos,int ypos)
 
     mXPos = xpos;
     mYPos = ypos;
-    mWidth = 4;
-    mHeight = 4;
+    mWidth = 79;
+    mHeight = 68;
+
+    mCollisionRect.push_back(new SDL_Rect {mXPos,mYPos,mWidth,mHeight});
 }
 
 void
@@ -390,7 +545,7 @@ Texture::loadFromFile(std::string path)
     SDL_Surface* loadedSurface = IMG_Load(path.c_str());
     if (loadedSurface == NULL)
     {
-        debug("Could not load texture image!");
+        		printf( "Unable to load image %s! SDL_image Error: %s\n", path.c_str(), IMG_GetError() );
     }
     else
     {
@@ -477,7 +632,7 @@ int main() {
 
         player.init(&playerTexture,0,0);
         level.init(&levelTexture);
-        coin.init(&coinTexture,20,20);
+        coin.init(&coinTexture,400,40);
         engine.registerPlayer(&player);
         engine.registerLevel(&level);
         engine.registerEntity(&coin);

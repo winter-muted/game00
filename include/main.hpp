@@ -57,7 +57,7 @@ public:
 
 private:
 
-    // The pointer to the (unique) player class
+    // The pointer to the (unique) playe1r class
     Player* mPlayer = NULL;
 
     // The pointer to the (unique) level
@@ -106,7 +106,7 @@ public:
     virtual void die() = 0;
     virtual bool isDead() = 0;
 
-    bool isCollision(std::vector<SDL_Rect*>& A);
+    bool isCollision(std::vector<SDL_Rect*> A);
 
     std::vector<SDL_Rect*> getCollisionBox();
 
@@ -118,6 +118,8 @@ protected:
 
     int mXPos;
     int mYPos;
+    double mVelX;
+    double mVelY;
     int mWidth;
     int mHeight;
 
@@ -132,14 +134,20 @@ public:
 
     virtual void render();
 
+    void processInput(SDL_Event & e);
     void interact(Level* level,std::vector<Entity*>& entityList, int action);
+
+    void moveX();
+    void moveY();
+    void unmoveX();
+    void unmoveY();
 
     void die();
     bool isDead();
 
 
 private:
-    bool isFlying = 0;
+    bool mIsFlying = 1;
 
 
 };
