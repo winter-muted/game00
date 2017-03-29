@@ -106,7 +106,7 @@ public:
     virtual void die() = 0;
     virtual bool isDead() = 0;
 
-    bool isCollision(std::vector<SDL_Rect*> A);
+    std::string isCollision(std::vector<SDL_Rect*> A);
 
     std::vector<SDL_Rect*> getCollisionBox();
 

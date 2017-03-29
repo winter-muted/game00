@@ -167,8 +167,9 @@ Level::init(Texture* texture)
 
     // Create an SDL_Rect that is the collision box in the level
     // SDL_Rect* collisionBox = new SDL_Rect {20,20,20,20};
-    mCollisionRect.push_back(new SDL_Rect {0,400,800,20});
-    // mCollisionRect.push_back(new SDL_Rect {250,250,30,30});
+
+    mCollisionRect.push_back(new SDL_Rect {600,0,20,800});
+    mCollisionRect.push_back(new SDL_Rect {0,350,800,20});
 
 
 
@@ -234,41 +235,9 @@ Entity::free()
     }
 }
 
-bool
+std::string
 Entity::isCollision(std::vector<SDL_Rect*> A)
 {
-    // int leftA,leftB;
-    // int rightA,rightB;
-    // int topA,topB;
-    // int bottomA,bottomB;
-    //
-    // for (size_t i = 0; i < A.size(); i++)
-    // {
-    //     leftA = A[i]->x;
-    //     rightA = A[i]->x + A[i]->w;
-    //     topA = A[i]->y;
-    //     bottomA = A[i]->y + A[i]->h;
-    //
-    //     // iterate through B collision boxes
-    //     for (size_t j = 0; j < mCollisionRect.size(); j++)
-    //     {
-    //
-    //         leftB = mCollisionRect[j]->x;
-    //         rightB = mCollisionRect[j]->x + mCollisionRect[j]->w;
-    //         topB = mCollisionRect[j]->y;
-    //         bottomB = mCollisionRect[j]->y + mCollisionRect[j]->h;
-    //
-    //         // if any side does not overlap, there is no collision;
-    //         if ((bottomA <= topB) || (topA >= bottomB) || (rightA <= leftB) || (leftA >= rightB) == false)
-    //         {
-    //             return true;
-    //         }
-    //     }
-    //
-    // }
-    // else return no collision
-    // return false;
-
     int leftA,leftB;
     int rightA,rightB;
     int topA,topB;
@@ -290,16 +259,31 @@ Entity::isCollision(std::vector<SDL_Rect*> A)
             topB = A[j]->y;
             bottomB = A[j]->y + A[j]->h;
 
-            // if any side does not overlap, there is no collision;
+            // if , there is a collision;
             if( ( ( bottomA <= topB ) || ( topA >= bottomB ) || ( rightA <= leftB ) || ( leftA >= rightB ) ) == false )
             {
-                return true;
+
+                if (rightA >= leftB)
+                {
+                    std::cout << "right" << std::endl;
+                    return "right";
+                }
+                if (leftA <= rightB)
+                {
+                    std::cout << "left" << std::endl;
+                    return "left";
+                }
+                if (bottomA >= topB)
+                    return "bottom";
+                if (topA <= bottomB)
+                    return "top";
             }
+
         }
 
     }
     // else return no collision
-    return false;
+    return "none";
 }
 
 std::vector<SDL_Rect*>
@@ -330,7 +314,6 @@ Player::init(Texture* texture, int xpos, int ypos)
     // for now, just have one collision box
     mCollisionRect.push_back(new SDL_Rect {xpos,ypos,mWidth,mHeight});
 
-
 }
 
 void
@@ -354,13 +337,13 @@ Player::processInput(SDL_Event & e)
 
             case SDLK_w:
             {
-                mIsFlying = 1;
-                mVelY -= 25;
+                if (!mIsFlying)
+                {
+                    mIsFlying = 1;
+                    mVelY -= 15;
+                }
                 break;
             }
-            // case SDLK_s:
-            //     mVelY += 1;
-            //     break;
             case SDLK_a:
                 mVelX -= 1;
                 break;
@@ -375,14 +358,11 @@ Player::processInput(SDL_Event & e)
         //Adjust the velocity
         switch( e.key.keysym.sym )
         {
-            // case SDLK_w:
-            // {
-            //     mVelY += 1;
-            //     break;
-            // }
-            // case SDLK_s:
-            //     mVelY -= 1;
-            //     break;
+            case SDLK_w:
+            {
+                mVelY += 1;
+                break;
+            }
             case SDLK_a:
                 mVelX += 1;
                 break;
@@ -391,42 +371,43 @@ Player::processInput(SDL_Event & e)
                 break;
         }
     }
-    // std::cout << e.key.keysym.sym << std::endl;
 }
 void
 Player::interact(Level* level,std::vector<Entity*> & entityList, int action)
 {
 
-    bool levelCollision;
+    std::string levelCollision;
 
     moveX();
 
     levelCollision = isCollision(level->getCollisionBox());
 
-    if (mXPos < 0 || mXPos > SCREEN_WIDTH)
+    if (mXPos < 0 || mXPos > SCREEN_WIDTH || levelCollision == "left" || levelCollision == "right")
     {
         unmoveX();
     }
+
 
     moveY();
 
     levelCollision = isCollision(level->getCollisionBox());
 
-    if (mYPos < 0 || mYPos > SCREEN_HEIGHT)
+    if (mYPos < 0 || mYPos > SCREEN_HEIGHT || levelCollision == "top" || levelCollision == "bottom")
     {
         unmoveY();
     }
 
-    if (levelCollision)
+    if (levelCollision == "bottom")
     {
+        mVelY = 0;
         mIsFlying = 0;
-        unmoveY();
+        // unmoveY();
     }
 
 
     for (size_t i = 0; i < entityList.size(); i++)
     {
-        if (isCollision(entityList[i]->getCollisionBox()))
+        if (isCollision(entityList[i]->getCollisionBox()) != "none")
         {
             entityList[i]->die();
             break;
@@ -434,7 +415,6 @@ Player::interact(Level* level,std::vector<Entity*> & entityList, int action)
     }
 
 }
-
 
 void
 Player::moveX()
