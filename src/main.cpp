@@ -45,9 +45,21 @@ init()
                     success = false;
                     debug("Could not init SDL_image!");
                 }
+                if (TTF_Init() == -1)
+                {
+                    success = false;
+                    debug("Could not initialize TTF");
+                }
             }
         }
     }
+    gFont = TTF_OpenFont("resources/OpenSans-Regular.ttf",28);
+    if (gFont == NULL)
+    {
+        debug("Could not load font resource!");
+        success = false;
+    }
+
     return success;
 }
 
@@ -60,6 +72,7 @@ teardown()
     gRenderer = NULL;
     gWindow = NULL;
 
+    TTF_Quit();
     IMG_Quit();
     SDL_Quit();
 
@@ -94,6 +107,14 @@ Engine::registerEntity(Entity* entity)
         debug("Tried to register NULL entity!");
 }
 
+void
+Engine::registerScoreBoard(Texture* text)
+{
+    mScoreTexture = text;
+    SDL_Color textColor = { 0, 0, 0 };
+    mScoreTexture->loadFromRenderedText("0",textColor);
+}
+
 /* Get the most recent keyboard event from SDL.  If it is quit, make
     make sure to return 0 */
 bool
@@ -121,8 +142,13 @@ Engine::updateEntityState()
 
     // go through the entity list, and see if they need to be deleted
     for (size_t i = 0; i < mEntityList.size(); i++)
-        if (mEntityList[i]->isDead())
+        if (mEntityList[i]->isDead()) {
             mEntityList.erase(mEntityList.begin()+i);
+
+            // read the new player score
+            SDL_Color textColor = { 0, 0, 0 };
+            mScoreTexture->loadFromRenderedText(mPlayer->getScore(),textColor);
+        }
 
 
 }
@@ -134,6 +160,8 @@ Engine::updateRenderPipeline()
     mPlayer->render();
     for (size_t i = 0; i < mEntityList.size(); i++)
         mEntityList[i]->render();
+
+    mScoreTexture->render(400,20);
 }
 
 void
@@ -148,6 +176,8 @@ Engine::quit()
 {
     mLevel->free();
     mPlayer->free();
+
+    mScoreTexture->free();
 
     for (size_t i = 0; i < mEntityList.size(); i++)
         mEntityList[i]->free();
@@ -235,7 +265,8 @@ Entity::free()
     }
 }
 
-std::string
+// std::string
+bool
 Entity::isCollision(std::vector<SDL_Rect*> A)
 {
     int leftA,leftB;
@@ -259,31 +290,15 @@ Entity::isCollision(std::vector<SDL_Rect*> A)
             topB = A[j]->y;
             bottomB = A[j]->y + A[j]->h;
 
-            // if , there is a collision;
-            if( ( ( bottomA <= topB ) || ( topA >= bottomB ) || ( rightA <= leftB ) || ( leftA >= rightB ) ) == false )
-            {
-
-                if (rightA >= leftB)
-                {
-                    std::cout << "right" << std::endl;
-                    return "right";
-                }
-                if (leftA <= rightB)
-                {
-                    std::cout << "left" << std::endl;
-                    return "left";
-                }
-                if (bottomA >= topB)
-                    return "bottom";
-                if (topA <= bottomB)
-                    return "top";
-            }
-
-        }
-
-    }
-    // else return no collision
-    return "none";
+             //If no sides from A are outside of B
+             if( ( ( bottomA <= topB ) || ( topA >= bottomB ) || ( rightA <= leftB ) || ( leftA >= rightB ) ) == false )
+             {
+                 //A collision is detected
+                 return true;
+             }
+         }
+     }
+     return false;
 }
 
 std::vector<SDL_Rect*>
@@ -307,8 +322,15 @@ Player::init(Texture* texture, int xpos, int ypos)
     mYPos = ypos;
     mVelX = 0;
     mVelY = 0;
-    mWidth = 75;
-    mHeight = 64;
+    mWidth = 37;
+    mHeight = 56;
+
+    // set the SDL rectangles detailing the sprite sheet
+    // for the base player, this is the left and right side
+
+    mSpriteSheetRect.push_back(new SDL_Rect {0,0,37,64});
+    mSpriteSheetRect.push_back(new SDL_Rect {37,0,37,64});
+
 
     // set the initial position collision box(es)
     // for now, just have one collision box
@@ -321,6 +343,11 @@ Player::render()
 {
     // do the clip specific code
     SDL_Rect* clip = NULL;
+    if (mIsFlying)
+        clip = mSpriteSheetRect[1];
+    else
+        clip = mSpriteSheetRect[0];
+
     mTexture->render(mXPos,mYPos,clip);
 
 }
@@ -358,11 +385,11 @@ Player::processInput(SDL_Event & e)
         //Adjust the velocity
         switch( e.key.keysym.sym )
         {
-            case SDLK_w:
-            {
-                mVelY += 1;
-                break;
-            }
+            // case SDLK_w:
+            // {
+            //     mVelY += 1;
+            //     break;
+            // }
             case SDLK_a:
                 mVelX += 1;
                 break;
@@ -376,46 +403,40 @@ void
 Player::interact(Level* level,std::vector<Entity*> & entityList, int action)
 {
 
-    std::string levelCollision;
-
-    moveX();
-
-    levelCollision = isCollision(level->getCollisionBox());
-
-    if (mXPos < 0 || mXPos > SCREEN_WIDTH || levelCollision == "left" || levelCollision == "right")
-    {
-        unmoveX();
-    }
-
+    bool levelCollision;
 
     moveY();
 
     levelCollision = isCollision(level->getCollisionBox());
 
-    if (mYPos < 0 || mYPos > SCREEN_HEIGHT || levelCollision == "top" || levelCollision == "bottom")
+    if (mYPos < 0 || mYPos > SCREEN_HEIGHT || levelCollision)
     {
         unmoveY();
-    }
-
-    if (levelCollision == "bottom")
-    {
+        mIsFlying = false;
         mVelY = 0;
-        mIsFlying = 0;
-        // unmoveY();
     }
 
+    moveX();
+
+    levelCollision = isCollision(level->getCollisionBox());
+
+    if (mXPos < 0 || mXPos > SCREEN_WIDTH || levelCollision)
+    {
+        unmoveX();
+    }
 
     for (size_t i = 0; i < entityList.size(); i++)
     {
-        if (isCollision(entityList[i]->getCollisionBox()) != "none")
+        if (isCollision(entityList[i]->getCollisionBox()))
         {
             entityList[i]->die();
+            ++mScore;
             break;
         }
     }
 
 }
-
+inline
 void
 Player::moveX()
 {
@@ -424,10 +445,11 @@ Player::moveX()
 
     for (size_t i = 0; i < mCollisionRect.size(); i++)
     {
-        mCollisionRect[i]->x += mVelX;
+        mCollisionRect[i]->x = mXPos;
     }
 }
 
+inline
 void
 Player::unmoveX()
 {
@@ -435,10 +457,11 @@ Player::unmoveX()
 
     for (size_t i = 0; i < mCollisionRect.size(); i++)
     {
-        mCollisionRect[i]->x -= mVelX;
+        mCollisionRect[i]->x = mXPos;
     }
 }
 
+inline
 void
 Player::moveY()
 {
@@ -449,10 +472,11 @@ Player::moveY()
 
     for (size_t i = 0; i < mCollisionRect.size(); i++)
     {
-        mCollisionRect[i]->y += mVelY;
+        mCollisionRect[i]->y = mYPos;
     }
 }
 
+inline
 void
 Player::unmoveY()
 {
@@ -460,7 +484,7 @@ Player::unmoveY()
 
     for (size_t i = 0; i < mCollisionRect.size(); i++)
     {
-        mCollisionRect[i]->y -= mVelY;
+        mCollisionRect[i]->y = mYPos;
     }
 }
 
@@ -477,6 +501,12 @@ Player::isDead()
     return mIsDead;
 }
 
+std::string
+Player::getScore()
+{
+    return std::to_string(mScore);
+}
+
 /////////////////////////////////////////////////////////////////
 // COIN
 void
@@ -489,8 +519,8 @@ Coin::init(Texture* texture,int xpos,int ypos)
 
     mXPos = xpos;
     mYPos = ypos;
-    mWidth = 79;
-    mHeight = 68;
+    mWidth = 39;
+    mHeight = 20;
 
     mCollisionRect.push_back(new SDL_Rect {mXPos,mYPos,mWidth,mHeight});
 }
@@ -530,7 +560,7 @@ Texture::loadFromFile(std::string path)
     else
     {
         // color key image
-        SDL_SetColorKey(loadedSurface,SDL_TRUE,SDL_MapRGB(loadedSurface->format,0,0xFF,0xFF));
+        SDL_SetColorKey(loadedSurface,SDL_TRUE,SDL_MapRGB(loadedSurface->format,0xEE,0xEE,0xEE));
 
         newTexture = SDL_CreateTextureFromSurface(gRenderer,loadedSurface);
 
@@ -550,6 +580,34 @@ Texture::loadFromFile(std::string path)
     return mTexture != NULL;
 }
 
+bool
+Texture::loadFromRenderedText(std::string textureText, SDL_Color textColor)
+{
+    free();
+
+    // Render the surface
+    SDL_Surface* textSurface = TTF_RenderText_Solid(gFont,textureText.c_str(),textColor);
+
+    if (textSurface == NULL)
+    {
+        debug("Could not render text!");
+    }
+    else
+    {
+        mTexture = SDL_CreateTextureFromSurface(gRenderer,textSurface);
+        if (mTexture == NULL)
+        {
+            debug("Could not create texture from rendered text!");
+        }
+        else
+        {
+            mWidth = textSurface->w;
+            mHeight = textSurface->h;
+        }
+        SDL_FreeSurface(textSurface);
+    }
+    return mTexture != NULL;
+}
 void
 Texture::free()
 {
@@ -589,6 +647,7 @@ int main() {
         Texture playerTexture;
         Texture levelTexture;
         Texture coinTexture;
+        Texture textTexture;
 
         if (!playerTexture.loadFromFile("resources/player.png"))
         {
@@ -608,14 +667,30 @@ int main() {
         Engine engine;
         Level level;
         Player player;
-        Coin coin;
+        // Coin coin;
 
         player.init(&playerTexture,0,0);
         level.init(&levelTexture);
-        coin.init(&coinTexture,400,40);
+
+        std::random_device rd;
+        std::mt19937 rng(rd());
+        std::uniform_int_distribution<int> uni(0,400);
+
+        std::vector<Coin*> coinList;
+        for (size_t i = 0; i < 10; i++) {
+            auto val1 = uni(rng);
+            auto val2 = uni(rng);
+
+            Coin* coin = new Coin();
+            coin->init(&coinTexture,val1,val2);
+            coinList.push_back(coin);
+            engine.registerEntity(coinList[i]);
+        }
+        // std::cout << coinList.size() << std::endl;
+        // coin.init(&coinTexture,400,300);
         engine.registerPlayer(&player);
         engine.registerLevel(&level);
-        engine.registerEntity(&coin);
+        engine.registerScoreBoard(&textTexture);
 
         // start the game loop
         bool running = true;
@@ -623,13 +698,20 @@ int main() {
         {
             // processInput() returns 0 when SDL_QUIT is signaled, 1 otherwise
             running = engine.processInput();
-
             engine.updateEntityState();
             engine.updateRenderPipeline();
             engine.render();
 
         }
+
+
         engine.quit();
+
+        // for (size_t i = 0; i < coinList.size(); i++)
+        // {
+        //     coinList[i]->free();
+        // }
+
         teardown();
 
     }

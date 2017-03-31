@@ -4,10 +4,13 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_mixer.h>
+#include <SDL2/SDL_ttf.h>
 
 #include <string>
 #include <vector>
 #include <iostream>
+#include <algorithm>
+#include <random>
 
 #include <stdio.h>
 
@@ -31,13 +34,13 @@ const int SCREEN_HEIGHT = 480;
 
 SDL_Renderer* gRenderer = NULL;
 SDL_Window* gWindow = NULL;
+TTF_Font *gFont = NULL;
+
 
 // forward declare global functions
 bool init();
 void teardown();
 
-
-// Tape out classes
 
 /* A class to handle the game loop and logic */
 // This class has side effects on the global SDL context defined above
@@ -48,6 +51,7 @@ public:
     void registerPlayer(Player* player);
     void registerLevel(Level* level);
     void registerEntity(Entity* entity);
+    void registerScoreBoard(Texture* text);
 
     bool processInput(); // returns 0 when it is time to exit
     void updateEntityState();
@@ -57,7 +61,7 @@ public:
 
 private:
 
-    // The pointer to the (unique) playe1r class
+    // The pointer to the (unique) player class
     Player* mPlayer = NULL;
 
     // The pointer to the (unique) level
@@ -69,6 +73,9 @@ private:
     // The most recent input received from SDL
     // populated by processInput()
     int mRecentInput = 0;
+
+    // Texture to hold score text
+    Texture* mScoreTexture = NULL;
 
 
 
@@ -106,7 +113,7 @@ public:
     virtual void die() = 0;
     virtual bool isDead() = 0;
 
-    std::string isCollision(std::vector<SDL_Rect*> A);
+    bool isCollision(std::vector<SDL_Rect*> A);
 
     std::vector<SDL_Rect*> getCollisionBox();
 
@@ -114,6 +121,8 @@ protected:
 
     Texture* mTexture;
     std::vector<SDL_Rect*> mCollisionRect;
+    std::vector<SDL_Rect*> mSpriteSheetRect;
+
     bool mIsDead = 0;
 
     int mXPos;
@@ -144,10 +153,12 @@ public:
 
     void die();
     bool isDead();
+    std::string getScore();
 
 
 private:
     bool mIsFlying = 1;
+    size_t mScore = 0;
 
 
 };
@@ -174,6 +185,7 @@ class Texture
 public:
 
     bool loadFromFile(std::string path);
+    bool loadFromRenderedText(std::string textureText, SDL_Color textColor);
     void free();
     void render(int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE );
 
